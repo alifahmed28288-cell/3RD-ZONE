@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3RD ZONE — Tech Gadgets</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="topbar">🚚 Fast Delivery • Cash on Delivery • bKash/Nagad Available</div>
+  <nav class="nav">
+    <a class="logo" href="#">3RD <span>ZONE</span></a>
+    <div class="search"><input id="search" placeholder="Search products..."><button onclick="searchProducts()">🔍</button></div>
+    <button class="cart-btn" onclick="openCart()">🛒 Cart <b id="cartCount">0</b></button>
+  </nav>
+  <div class="categories">
+    <button onclick="filterProducts('all')">All</button>
+    <button onclick="filterProducts('Power Bank')">Power Bank</button>
+    <button onclick="filterProducts('TWS')">AirPods / TWS</button>
+    <button onclick="filterProducts('Phone Cooler')">Phone Cooler</button>
+    <button onclick="filterProducts('Charger')">Charger & Cable</button>
+    <button onclick="filterProducts('Gaming')">Gaming</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div>
+    <p class="badge">3RD ZONE</p>
+    <h1>Latest Tech Gadgets<br>at Great Prices.</h1>
+    <p>Power banks, TWS, phone coolers, chargers and gaming accessories.</p>
+    <button class="shop" onclick="document.getElementById('products').scrollIntoView()">Shop Now →</button>
+  </div>
+  <div class="hero-card">⚡<br><strong>SMART<br>GADGETS</strong></div>
+</section>
+
+<main>
+  <div class="section-head">
+    <div><h2>Featured Products</h2><p>Popular gadgets from 3RD ZONE</p></div>
+    <select id="sort" onchange="render()"><option value="default">Sort: Featured</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option></select>
+  </div>
+  <section id="products" class="grid"></section>
+</main>
+
+<div id="cartModal" class="modal">
+  <div class="modal-box">
+    <button class="close" onclick="closeCart()">×</button>
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <div class="total">Total: ৳<span id="cartTotal">0</span></div>
+    <button class="primary" onclick="showCheckout()">Checkout</button>
+  </div>
+</div>
+
+<div id="checkoutModal" class="modal">
+  <div class="modal-box">
+    <button class="close" onclick="closeCheckout()">×</button>
+    <h2>Place Your Order</h2>
+    <form onsubmit="placeOrder(event)">
+      <input id="name" required placeholder="Full name">
+      <input id="phone" required placeholder="Phone number">
+      <textarea id="address" required placeholder="Delivery address"></textarea>
+      <select id="payment">
+        <option>Cash on Delivery</option>
+        <option>bKash</option>
+        <option>Nagad</option>
+      </select>
+      <div id="paymentInfo" class="pay-info">For bKash/Nagad, add your merchant/personal number here.</div>
+      <button class="primary" type="submit">Confirm Order</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <h2>3RD ZONE</h2>
+  <p>Your trusted destination for everyday tech gadgets.</p>
+  <p>📞 Contact: YOUR PHONE NUMBER &nbsp; | &nbsp; 💬 WhatsApp: YOUR NUMBER</p>
+  <small>© 2026 3RD ZONE. All rights reserved.</small>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
