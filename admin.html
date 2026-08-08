@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>3RD ZONE — Admin Panel</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>3RD ZONE</h1>
+      <p>Admin Panel</p>
+    </div>
+    <button id="logoutBtn" class="secondary hidden">Logout</button>
+  </header>
+
+  <main>
+    <section id="configCard" class="card">
+      <h2>Connect Supabase</h2>
+      <p class="muted">Enter your Supabase Project URL and the browser-safe <b>anon/public key</b>. Never put a service-role key here.</p>
+      <label>Project URL<input id="supabaseUrl" placeholder="https://your-project.supabase.co"></label>
+      <label>Anon/Public Key<textarea id="supabaseKey" rows="3" placeholder="eyJ..."></textarea></label>
+      <button id="saveConfigBtn">Save & Continue</button>
+    </section>
+
+    <section id="loginCard" class="card hidden">
+      <h2>Admin Login</h2>
+      <label>Email<input id="email" type="email" autocomplete="email"></label>
+      <label>Password<input id="password" type="password" autocomplete="current-password"></label>
+      <button id="loginBtn">Login</button>
+      <p id="loginMsg" class="msg"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="grid">
+        <div class="card stat"><span>Total products</span><strong id="productCount">0</strong></div>
+        <div class="card stat"><span>Total views</span><strong id="viewCount">0</strong></div>
+        <div class="card stat"><span>Total orders</span><strong id="orderCount">0</strong></div>
+      </div>
+
+      <section class="card">
+        <h2>Add Product</h2>
+        <form id="productForm">
+          <div class="two">
+            <label>Product name<input id="pName" required></label>
+            <label>Category<input id="pCategory"></label>
+          </div>
+          <div class="two">
+            <label>Price<input id="pPrice" type="number" min="0" step="0.01" required></label>
+            <label>Old price<input id="pOldPrice" type="number" min="0" step="0.01"></label>
+          </div>
+          <div class="two">
+            <label>Stock<input id="pStock" type="number" min="0" value="0"></label>
+            <label>Featured
+              <select id="pFeatured"><option value="false">No</option><option value="true">Yes</option></select>
+            </label>
+          </div>
+          <label>Description<textarea id="pDescription" rows="4"></textarea></label>
+          <label>Product photos/videos
+            <input id="pMedia" type="file" accept="image/*,video/*" multiple>
+          </label>
+          <button type="submit">Add Product</button>
+          <p id="productMsg" class="msg"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Products</h2>
+        <div id="productsList" class="list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Most Viewed Products</h2>
+        <div id="analyticsList" class="list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Social Links</h2>
+        <form id="socialForm">
+          <div id="socialFields"></div>
+          <button type="submit">Save Social Links</button>
+          <p id="socialMsg" class="msg"></p>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
