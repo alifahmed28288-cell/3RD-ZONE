@@ -1,1085 +1,1041 @@
-// ======================================================
-// 3RD ZONE - PRODUCTS + MEDIA + DETAILS + CART
-// ======================================================
+// =====================================================
+// 3RD ZONE - SUPABASE PRODUCT SHOP
+// Product Details + Multiple Images + Video + WhatsApp
+// =====================================================
 
-const SUPABASE_URL =
-  "https://oiuvprtyjajatubueoum.supabase.co";
+const SUPABASE_URL = "https://oiuvprtyjajatubueoum.supabase.co";
 
 const SUPABASE_ANON_KEY =
-  "sb_publishable_i7FvSYVlb-gg73oLQyFMCg_fyfcg5pU";
+"sb_publishable_i7FvSYVlb-gg73oLQyFMCg_fyfcg5pU";
 
-const WHATSAPP_NUMBER =
-  "8801404610359";
+const WHATSAPP_NUMBER = "8801404610359";
 
 let products = [];
 let cart = [];
+let currentProduct = null;
+let currentMedia = [];
 
 
-// ======================================================
-// SUPABASE REQUEST
-// ======================================================
-
-async function supabaseFetch(url) {
-
-  const response = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return await response.json();
-}
-
-
-// ======================================================
-// LOAD PRODUCTS + MEDIA
-// ======================================================
+// =====================================================
+// LOAD PRODUCTS
+// =====================================================
 
 async function loadProducts() {
 
-  const box =
-    document.getElementById("products");
-
-  box.innerHTML =
-    "<p>Loading products...</p>";
-
-  try {
-
-    const productData =
-      await supabaseFetch(
-        `${SUPABASE_URL}/rest/v1/products?select=*&active=eq.true&order=created_at.desc`
-      );
-
-
-    products =
-      await Promise.all(
-
-        productData.map(
-          async function (product) {
-
-            let media = [];
-
-            try {
-
-              media =
-                await supabaseFetch(
-                  `${SUPABASE_URL}/rest/v1/product_media?select=id,product_id,media_type,media_url,sort_order&product_id=eq.${product.id}&order=sort_order.asc`
-                );
-
-            } catch (error) {
-
-              console.error(
-                "Media error:",
-                error
-              );
-
-            }
-
-
-            return {
-
-              id: product.id,
-
-              name:
-                product.name ||
-                "Unnamed Product",
-
-              cat:
-                product.category ||
-                "Other",
-
-              price:
-                Number(product.price || 0),
-
-              old:
-                Number(product.old_price || 0),
-
-              description:
-                product.description ||
-                "Premium quality product from 3RD ZONE.",
-
-              media: media
-
-            };
-
-          }
-        )
-
-      );
-
-
-    console.log(
-      "PRODUCTS:",
-      products
-    );
-
-
-    render(products);
-
-
-  } catch (error) {
-
-    console.error(
-      "PRODUCT LOAD ERROR:",
-      error
-    );
-
+    const box = document.getElementById("products");
 
     box.innerHTML = `
-      <div style="padding:20px;text-align:center;">
-        <h3>Products could not be loaded.</h3>
-        <p>Please refresh the website.</p>
-      </div>
+        <div class="loading-products">
+            Loading products...
+        </div>
     `;
 
-  }
+    try {
 
-}
-
-
-// ======================================================
-// GET IMAGE
-// ======================================================
-
-function getImage(product) {
-
-  if (
-    !product.media ||
-    !product.media.length
-  ) {
-    return "";
-  }
-
-
-  const image =
-    product.media.find(
-      function (m) {
-
-        return (
-          String(m.media_type)
-            .toLowerCase()
-            === "image"
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/products?select=*&active=eq.true&order=created_at.desc`,
+            {
+                headers: {
+                    apikey: SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
         );
 
-      }
-    );
+        if (!response.ok) {
+            throw new Error("Could not load products");
+        }
+
+        const data = await response.json();
+
+        products = data.map(p => ({
+            id: p.id,
+            name: p.name || "Unnamed Product",
+            cat: p.category || "Other",
+            price: Number(p.price || 0),
+            old: Number(p.old_price || 0),
+            description:
+                p.description ||
+                p.details ||
+                "High quality product from 3RD ZONE.",
+            stock: p.stock ?? "In Stock",
+            brand: p.brand || "3RD ZONE",
+            rating: p.rating || 5,
+            reviews: p.reviews || 0,
+            icon: getIcon(p.category),
+            media: []
+        }));
 
 
-  return image
-    ? image.media_url
-    : "";
-
-}
-
-
-// ======================================================
-// GET VIDEO
-// ======================================================
-
-function getVideo(product) {
-
-  if (
-    !product.media ||
-    !product.media.length
-  ) {
-    return "";
-  }
-
-
-  const video =
-    product.media.find(
-      function (m) {
-
-        return (
-          String(m.media_type)
-            .toLowerCase()
-            === "video"
+        // Load media for every product
+        await Promise.all(
+            products.map(async product => {
+                product.media = await loadProductMedia(product.id);
+            })
         );
 
-      }
-    );
+        render();
 
+    } catch (error) {
 
-  return video
-    ? video.media_url
-    : "";
+        console.error(error);
 
+        box.innerHTML = `
+            <div class="error-products">
+                <h3>Unable to load products</h3>
+                <p>Please refresh the page.</p>
+            </div>
+        `;
+    }
 }
 
 
-// ======================================================
-// PRODUCT ICON
-// ======================================================
+// =====================================================
+// LOAD PRODUCT MEDIA
+// =====================================================
+
+async function loadProductMedia(productId) {
+
+    try {
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/product_media?select=*&product_id=eq.${productId}&order=sort_order.asc`,
+            {
+                headers: {
+                    apikey: SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            console.log("Media loading failed:", productId);
+            return [];
+        }
+
+        const data = await response.json();
+
+        return data.map(m => ({
+            type: (m.media_type || "image").toLowerCase(),
+            url: m.media_url
+        }));
+
+    } catch (error) {
+
+        console.error("Media error:", error);
+
+        return [];
+    }
+}
+
+
+// =====================================================
+// ICON
+// =====================================================
 
 function getIcon(category) {
 
-  if (!category) return "📦";
+    if (!category) return "📦";
 
-  const c =
-    String(category).toLowerCase();
+    const cat = category.toLowerCase();
 
+    if (cat.includes("power")) return "🔋";
+    if (cat.includes("tws")) return "🎧";
+    if (cat.includes("cooler")) return "❄️";
+    if (cat.includes("charger")) return "🔌";
+    if (cat.includes("cable")) return "🔗";
+    if (cat.includes("gaming")) return "🎮";
+    if (cat.includes("speaker")) return "🔊";
 
-  if (c.includes("power"))
-    return "🔋";
-
-  if (c.includes("tws"))
-    return "🎧";
-
-  if (c.includes("airpods"))
-    return "🎧";
-
-  if (c.includes("cooler"))
-    return "❄️";
-
-  if (c.includes("charger"))
-    return "🔌";
-
-  if (c.includes("cable"))
-    return "🔗";
-
-  if (c.includes("gaming"))
-    return "🎮";
-
-  if (c.includes("speaker"))
-    return "🔊";
-
-
-  return "📦";
-
+    return "📦";
 }
 
 
-// ======================================================
-// HTML ESCAPE
-// ======================================================
-
-function escapeHTML(value) {
-
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-
-// ======================================================
-// RENDER PRODUCTS
-// ======================================================
+// =====================================================
+// PRODUCT CARD
+// =====================================================
 
 function render(list = products) {
 
-  const box =
-    document.getElementById("products");
+    let sortedList = [...list];
 
-  if (!box) return;
+    const sortElement = document.getElementById("sort");
 
+    if (sortElement) {
 
-  let sorted =
-    [...list];
+        const sort = sortElement.value;
 
-
-  const sort =
-    document.getElementById("sort");
-
-
-  if (
-    sort &&
-    sort.value === "low"
-  ) {
-
-    sorted.sort(
-      (a, b) =>
-        a.price - b.price
-    );
-
-  }
-
-
-  if (
-    sort &&
-    sort.value === "high"
-  ) {
-
-    sorted.sort(
-      (a, b) =>
-        b.price - a.price
-    );
-
-  }
-
-
-  if (!sorted.length) {
-
-    box.innerHTML =
-      "<p>No products found.</p>";
-
-    return;
-
-  }
-
-
-  box.innerHTML =
-    sorted.map(
-      function (product) {
-
-        const image =
-          getImage(product);
-
-
-        let mediaHTML;
-
-
-        if (image) {
-
-          mediaHTML = `
-            <img
-              src="${image}"
-              alt="${escapeHTML(product.name)}"
-              style="
-                width:100%;
-                height:220px;
-                object-fit:cover;
-                border-radius:12px;
-                display:block;
-              "
-            >
-          `;
-
-        } else {
-
-          mediaHTML = `
-            <div style="
-              height:220px;
-              display:flex;
-              align-items:center;
-              justify-content:center;
-              font-size:70px;
-            ">
-              ${getIcon(product.cat)}
-            </div>
-          `;
-
+        if (sort === "low") {
+            sortedList.sort((a, b) => a.price - b.price);
         }
 
+        if (sort === "high") {
+            sortedList.sort((a, b) => b.price - a.price);
+        }
+    }
 
-        const oldPrice =
-          product.old > 0
+
+    const productBox = document.getElementById("products");
+
+    if (!sortedList.length) {
+
+        productBox.innerHTML = `
+            <div class="no-products">
+                No products found.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    productBox.innerHTML = sortedList.map(p => {
+
+        const firstImage =
+            p.media.find(m => m.type === "image");
+
+        const imageHTML = firstImage
+
             ? `
-              <span class="old">
-                ৳${product.old.toLocaleString()}
-              </span>
-            `
-            : "";
+                <img
+                    src="${firstImage.url}"
+                    alt="${escapeHTML(p.name)}"
+                    loading="lazy"
+                >
+              `
+
+            : `
+                <div class="product-icon">
+                    ${p.icon}
+                </div>
+              `;
+
+
+        const discount =
+            p.old > p.price
+                ? Math.round(((p.old - p.price) / p.old) * 100)
+                : 0;
 
 
         return `
-          <article
-            class="card"
-            onclick="openProduct('${product.id}')"
-            style="cursor:pointer;"
-          >
 
-            <div class="pic">
-              ${mediaHTML}
-            </div>
+            <article
+                class="card product-card-new"
+                onclick="openProduct('${p.id}')"
+            >
 
+                <div class="pic product-image">
+                    ${imageHTML}
 
-            <div class="info">
+                    ${
+                        discount
+                            ? `<span class="discount-badge">-${discount}%</span>`
+                            : ""
+                    }
 
-              <span class="tag">
-                ${escapeHTML(product.cat)}
-              </span>
-
-
-              <h3>
-                ${escapeHTML(product.name)}
-              </h3>
-
-
-              <div class="price">
-                ৳${product.price.toLocaleString()}
-                ${oldPrice}
-              </div>
+                    ${
+                        p.media.length > 1
+                            ? `<span class="media-count">📷 ${p.media.length}</span>`
+                            : ""
+                    }
+                </div>
 
 
-              <button
-                class="add"
-                onclick="
-                  event.stopPropagation();
-                  addToCart('${product.id}');
-                "
-              >
-                Add to Cart
-              </button>
+                <div class="info">
 
-            </div>
+                    <span class="tag">
+                        ${escapeHTML(p.cat)}
+                    </span>
 
-          </article>
+                    <h3>
+                        ${escapeHTML(p.name)}
+                    </h3>
+
+
+                    <div class="stars">
+                        ⭐⭐⭐⭐⭐
+                    </div>
+
+
+                    <div class="price">
+
+                        ৳${p.price.toLocaleString()}
+
+                        ${
+                            p.old
+                                ? `<span class="old">
+                                    ৳${p.old.toLocaleString()}
+                                   </span>`
+                                : ""
+                        }
+
+                    </div>
+
+
+                    <button
+                        class="add"
+                        onclick="event.stopPropagation(); addToCart('${p.id}')"
+                    >
+                        🛒 Add to Cart
+                    </button>
+
+                </div>
+
+            </article>
         `;
 
-      }
-    ).join("");
-
+    }).join("");
 }
 
 
-// ======================================================
-// OPEN PRODUCT DETAILS
-// ======================================================
+// =====================================================
+// PRODUCT DETAILS
+// =====================================================
 
-function openProduct(id) {
+async function openProduct(id) {
 
-  const product =
-    products.find(
-      function (p) {
+    const product =
+        products.find(p => String(p.id) === String(id));
 
-        return String(p.id) ===
-          String(id);
+    if (!product) return;
 
-      }
-    );
+    currentProduct = product;
 
+    currentMedia = product.media || [];
 
-  if (!product) {
+    createProductModal();
 
-    alert("Product not found.");
-
-    return;
-
-  }
+    renderProductDetails();
+}
 
 
-  const image =
-    getImage(product);
+// =====================================================
+// CREATE PRODUCT MODAL
+// =====================================================
 
-  const video =
-    getVideo(product);
+function createProductModal() {
+
+    if (document.getElementById("productDetailsModal")) {
+        return;
+    }
 
 
-  let media = "";
+    const modal = document.createElement("div");
+
+    modal.id = "productDetailsModal";
+
+    modal.className = "product-details-modal";
 
 
-  if (image) {
+    modal.innerHTML = `
 
-    media += `
-      <img
-        src="${image}"
-        alt="${escapeHTML(product.name)}"
-        style="
-          width:100%;
-          max-height:400px;
-          object-fit:contain;
-          border-radius:12px;
-          margin-bottom:15px;
-          background:#f5f5f5;
-        "
-      >
+        <div
+            class="product-details-overlay"
+            onclick="closeProductDetails()"
+        ></div>
+
+
+        <div class="product-details-box">
+
+            <button
+                class="product-close"
+                onclick="closeProductDetails()"
+            >
+                ×
+            </button>
+
+
+            <div id="productDetailsContent"></div>
+
+        </div>
+
     `;
 
-  }
+
+    document.body.appendChild(modal);
+}
 
 
-  if (video) {
+// =====================================================
+// RENDER PRODUCT DETAILS
+// =====================================================
 
-    media += `
-      <video
-        controls
-        playsinline
-        style="
-          width:100%;
-          max-height:400px;
-          border-radius:12px;
-          background:#000;
-          margin-bottom:15px;
-        "
-      >
-        <source
-          src="${video}"
-          type="video/mp4"
+function renderProductDetails() {
+
+    const p = currentProduct;
+
+    const box =
+        document.getElementById("productDetailsContent");
+
+
+    const images =
+        currentMedia.filter(m => m.type === "image");
+
+
+    const videos =
+        currentMedia.filter(m => m.type === "video");
+
+
+    const firstImage =
+        images.length
+            ? images[0].url
+            : null;
+
+
+    const discount =
+        p.old > p.price
+            ? Math.round(((p.old - p.price) / p.old) * 100)
+            : 0;
+
+
+    let mainMedia = "";
+
+
+    if (firstImage) {
+
+        mainMedia = `
+            <img
+                id="mainProductImage"
+                class="main-product-media"
+                src="${firstImage}"
+                alt="${escapeHTML(p.name)}"
+            >
+        `;
+
+    } else if (videos.length) {
+
+        mainMedia = `
+            <video
+                class="main-product-media"
+                controls
+                playsinline
+            >
+                <source src="${videos[0].url}">
+            </video>
+        `;
+
+    } else {
+
+        mainMedia = `
+            <div class="big-product-icon">
+                ${p.icon}
+            </div>
+        `;
+    }
+
+
+    box.innerHTML = `
+
+        <div class="product-detail-layout">
+
+
+            <!-- LEFT SIDE -->
+
+            <div class="product-gallery">
+
+                <div class="main-media">
+
+                    ${mainMedia}
+
+                    ${
+                        discount
+                            ? `<span class="detail-discount">
+                                -${discount}%
+                               </span>`
+                            : ""
+                    }
+
+                </div>
+
+
+                <div class="thumbnail-list">
+
+                    ${
+                        images.map((m, i) => `
+
+                            <button
+                                class="thumbnail"
+                                onclick="changeMainImage('${m.url}')"
+                            >
+                                <img src="${m.url}">
+                            </button>
+
+                        `).join("")
+                    }
+
+
+                    ${
+                        videos.map((m, i) => `
+
+                            <button
+                                class="thumbnail video-thumb"
+                                onclick="showMainVideo('${m.url}')"
+                            >
+                                🎥
+                                <span>Video</span>
+                            </button>
+
+                        `).join("")
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- RIGHT SIDE -->
+
+            <div class="product-information">
+
+
+                <div class="product-category">
+                    ${escapeHTML(p.cat)}
+                </div>
+
+
+                ${
+                    discount
+                        ? `
+                            <div class="offer">
+                                -${discount}% OFF
+                            </div>
+                          `
+                        : ""
+                }
+
+
+                <h1>
+                    ${escapeHTML(p.name)}
+                </h1>
+
+
+                <div class="rating-row">
+
+                    <span class="stars-big">
+                        ⭐⭐⭐⭐⭐
+                    </span>
+
+                    <span>
+                        ${p.rating}/5
+                    </span>
+
+                    ${
+                        p.reviews
+                            ? `<span>
+                                (${p.reviews} Reviews)
+                               </span>`
+                            : ""
+                    }
+
+                </div>
+
+
+                <div class="detail-price">
+
+                    ৳${p.price.toLocaleString()}
+
+                    ${
+                        p.old
+                            ? `
+                                <span class="detail-old-price">
+                                    ৳${p.old.toLocaleString()}
+                                </span>
+                              `
+                            : ""
+                    }
+
+                </div>
+
+
+                <div class="stock">
+                    🟢 ${escapeHTML(String(p.stock))}
+                </div>
+
+
+                <div class="detail-section">
+
+                    <h3>📦 Product Details</h3>
+
+                    <p>
+                        ${escapeHTML(p.description)}
+                    </p>
+
+                </div>
+
+
+                <div class="detail-info-row">
+
+                    <b>Brand</b>
+
+                    <span>
+                        ${escapeHTML(String(p.brand))}
+                    </span>
+
+                </div>
+
+
+                <div class="detail-info-row">
+
+                    <b>Category</b>
+
+                    <span>
+                        ${escapeHTML(p.cat)}
+                    </span>
+
+                </div>
+
+
+                <div class="detail-section">
+
+                    <h3>🚚 Delivery</h3>
+
+                    <p>
+                        Nationwide delivery available.
+                        Cash on Delivery available.
+                    </p>
+
+                </div>
+
+
+                <div class="detail-section">
+
+                    <h3>🛡️ Service</h3>
+
+                    <p>
+                        Quality checked before delivery.
+                    </p>
+
+                </div>
+
+
+                <!-- DESKTOP BUTTONS -->
+
+                <div class="detail-buttons">
+
+                    <button
+                        class="buy-now"
+                        onclick="buyNow('${p.id}')"
+                    >
+                        🟢 Buy Now
+                    </button>
+
+
+                    <button
+                        class="detail-cart"
+                        onclick="addToCart('${p.id}')"
+                    >
+                        🛒 Add to Cart
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- MOBILE STICKY BUTTONS -->
+
+        <div class="mobile-buy-bar">
+
+            <button
+                onclick="buyNow('${p.id}')"
+                class="mobile-buy"
+            >
+                Buy Now
+                <small>WhatsApp</small>
+            </button>
+
+
+            <button
+                onclick="addToCart('${p.id}')"
+                class="mobile-cart"
+            >
+                Add to Cart
+            </button>
+
+        </div>
+
+    `;
+
+
+    document
+        .getElementById("productDetailsModal")
+        .classList.add("show");
+
+
+    document.body.style.overflow = "hidden";
+}
+
+
+// =====================================================
+// CHANGE IMAGE
+// =====================================================
+
+function changeMainImage(url) {
+
+    const container =
+        document.querySelector(".main-media");
+
+    if (!container) return;
+
+
+    container.innerHTML = `
+
+        <img
+            id="mainProductImage"
+            class="main-product-media"
+            src="${url}"
+            alt="Product"
         >
-      </video>
+
     `;
+}
 
-  }
+
+// =====================================================
+// SHOW VIDEO
+// =====================================================
+
+function showMainVideo(url) {
+
+    const container =
+        document.querySelector(".main-media");
+
+    if (!container) return;
 
 
-  if (!media) {
+    container.innerHTML = `
 
-    media = `
-      <div style="
-        height:250px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:80px;
-      ">
-        ${getIcon(product.cat)}
-      </div>
+        <video
+            class="main-product-media"
+            controls
+            autoplay
+            playsinline
+        >
+            <source src="${url}">
+        </video>
+
     `;
-
-  }
-
-
-  let modal =
-    document.getElementById(
-      "productDetailsModal"
-    );
-
-
-  if (!modal) {
-
-    modal =
-      document.createElement("div");
-
-    modal.id =
-      "productDetailsModal";
-
-    modal.style.cssText = `
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.75);
-      z-index:99999;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:15px;
-      overflow:auto;
-    `;
-
-    document.body.appendChild(
-      modal
-    );
-
-  }
-
-
-  modal.innerHTML = `
-
-    <div style="
-      background:#fff;
-      width:100%;
-      max-width:600px;
-      max-height:90vh;
-      overflow:auto;
-      border-radius:18px;
-      padding:20px;
-      position:relative;
-    ">
-
-      <button
-        onclick="closeProduct()"
-        style="
-          position:absolute;
-          right:12px;
-          top:12px;
-          width:38px;
-          height:38px;
-          border:0;
-          border-radius:50%;
-          background:#111;
-          color:#fff;
-          font-size:25px;
-          cursor:pointer;
-          z-index:2;
-        "
-      >
-        ×
-      </button>
-
-
-      ${media}
-
-
-      <span class="tag">
-        ${escapeHTML(product.cat)}
-      </span>
-
-
-      <h2>
-        ${escapeHTML(product.name)}
-      </h2>
-
-
-      <div
-        class="price"
-        style="
-          font-size:24px;
-          font-weight:bold;
-          margin:12px 0;
-        "
-      >
-        ৳${product.price.toLocaleString()}
-      </div>
-
-
-      <p style="
-        line-height:1.6;
-        color:#555;
-      ">
-        ${escapeHTML(product.description)}
-      </p>
-
-
-      <button
-        class="add"
-        style="
-          width:100%;
-          padding:14px;
-          margin-top:15px;
-        "
-        onclick="
-          addToCart('${product.id}');
-          closeProduct();
-        "
-      >
-        🛒 Add to Cart
-      </button>
-
-    </div>
-
-  `;
-
-
-  modal.style.display =
-    "flex";
-
 }
 
 
-// ======================================================
-// CLOSE PRODUCT
-// ======================================================
+// =====================================================
+// CLOSE DETAILS
+// =====================================================
 
-function closeProduct() {
+function closeProductDetails() {
 
-  const modal =
-    document.getElementById(
-      "productDetailsModal"
-    );
+    const modal =
+        document.getElementById("productDetailsModal");
 
+    if (modal) {
+        modal.classList.remove("show");
+    }
 
-  if (modal) {
-
-    modal.remove();
-
-  }
-
+    document.body.style.overflow = "";
 }
 
 
-// ======================================================
-// CATEGORY
-// ======================================================
+// =====================================================
+// BUY NOW - WHATSAPP
+// =====================================================
 
-function filterProducts(category) {
+function buyNow(id) {
 
-  if (category === "all") {
+    const product =
+        products.find(p => String(p.id) === String(id));
 
-    render(products);
-
-    return;
-
-  }
+    if (!product) return;
 
 
-  render(
-    products.filter(
-      function (p) {
+    const message =
+`🛍️ 3RD ZONE ORDER
 
-        return p.cat ===
-          category;
+📦 Product: ${product.name}
 
-      }
-    )
-  );
+💰 Price: ৳${product.price.toLocaleString()}
 
+I want to buy this product.
+
+Please confirm my order.`;
+
+    const url =
+        `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+    window.open(url, "_blank");
 }
 
 
-// ======================================================
-// SEARCH
-// ======================================================
-
-function searchProducts() {
-
-  const input =
-    document.getElementById(
-      "search"
-    );
-
-
-  const query =
-    input.value
-      .toLowerCase()
-      .trim();
-
-
-  if (!query) {
-
-    render(products);
-
-    return;
-
-  }
-
-
-  render(
-    products.filter(
-      function (p) {
-
-        return (
-          p.name
-            .toLowerCase()
-            .includes(query) ||
-
-          p.cat
-            .toLowerCase()
-            .includes(query)
-        );
-
-      }
-    )
-  );
-
-}
-
-
-// ======================================================
+// =====================================================
 // CART
-// ======================================================
+// =====================================================
 
 function addToCart(id) {
 
-  const product =
-    products.find(
-      function (p) {
+    const product =
+        products.find(
+            p => String(p.id) === String(id)
+        );
 
-        return String(p.id) ===
-          String(id);
-
-      }
-    );
+    if (!product) return;
 
 
-  if (!product) {
+    cart.push(product);
 
-    alert("Product not found.");
+    updateCart();
 
-    return;
-
-  }
-
-
-  cart.push(product);
-
-  updateCart();
-
-  alert(
-    "Added to cart!"
-  );
-
+    alert("Added to cart!");
 }
 
 
 function updateCart() {
 
-  const count =
-    document.getElementById(
-      "cartCount"
-    );
+    const count =
+        document.getElementById("cartCount");
 
-
-  if (count) {
-
-    count.textContent =
-      cart.length;
-
-  }
-
+    if (count) {
+        count.textContent = cart.length;
+    }
 }
 
 
 function openCart() {
 
-  const modal =
-    document.getElementById(
-      "cartModal"
-    );
+    const modal =
+        document.getElementById("cartModal");
+
+    if (!modal) return;
 
 
-  if (!modal) return;
+    modal.style.display = "flex";
 
 
-  modal.style.display =
-    "flex";
+    const items =
+        document.getElementById("cartItems");
 
 
-  const items =
-    document.getElementById(
-      "cartItems"
-    );
+    items.innerHTML = cart.length
 
+        ? cart.map((p, i) => `
 
-  if (!cart.length) {
-
-    items.innerHTML =
-      "Your cart is empty.";
-
-  } else {
-
-    items.innerHTML =
-      cart.map(
-        function (p, i) {
-
-          return `
             <div class="cart-row">
 
-              <span>
-                ${getIcon(p.cat)}
-                ${escapeHTML(p.name)}
-              </span>
+                <span>
+                    ${p.icon}
+                    ${escapeHTML(p.name)}
+                </span>
 
-              <b>
-                ৳${p.price.toLocaleString()}
+                <b>
+                    ৳${p.price.toLocaleString()}
 
-                <button
-                  onclick="removeItem(${i})"
-                >
-                  ×
-                </button>
-              </b>
+                    <button
+                        onclick="removeItem(${i})"
+                    >
+                        ×
+                    </button>
+                </b>
 
             </div>
-          `;
 
-        }
-      ).join("");
+        `).join("")
 
-  }
+        : "Your cart is empty.";
 
 
-  const total =
-    cart.reduce(
-      function (sum, p) {
-
-        return sum + p.price;
-
-      },
-      0
-    );
-
-
-  document.getElementById(
-    "cartTotal"
-  ).textContent =
-    total.toLocaleString();
-
+    document.getElementById("cartTotal").textContent =
+        cart
+            .reduce((sum, p) => sum + p.price, 0)
+            .toLocaleString();
 }
 
 
-function removeItem(index) {
+function removeItem(i) {
 
-  cart.splice(
-    index,
-    1
-  );
+    cart.splice(i, 1);
 
-  updateCart();
+    updateCart();
 
-  openCart();
-
+    openCart();
 }
 
 
 function closeCart() {
 
-  const modal =
-    document.getElementById(
-      "cartModal"
-    );
+    const modal =
+        document.getElementById("cartModal");
 
-
-  if (modal) {
-
-    modal.style.display =
-      "none";
-
-  }
-
+    if (modal) {
+        modal.style.display = "none";
+    }
 }
 
 
-// ======================================================
+// =====================================================
 // CHECKOUT
-// ======================================================
+// =====================================================
 
 function showCheckout() {
 
-  if (!cart.length) {
+    if (!cart.length) {
 
-    alert(
-      "Your cart is empty."
-    );
+        alert("Your cart is empty.");
 
-    return;
-
-  }
+        return;
+    }
 
 
-  closeCart();
+    closeCart();
 
-
-  const modal =
     document.getElementById(
-      "checkoutModal"
-    );
-
-
-  if (modal) {
-
-    modal.style.display =
-      "flex";
-
-  }
-
+        "checkoutModal"
+    ).style.display = "flex";
 }
 
 
 function closeCheckout() {
 
-  const modal =
     document.getElementById(
-      "checkoutModal"
-    );
-
-
-  if (modal) {
-
-    modal.style.display =
-      "none";
-
-  }
-
+        "checkoutModal"
+    ).style.display = "none";
 }
 
 
-// ======================================================
-// WHATSAPP ORDER
-// ======================================================
+// =====================================================
+// PLACE ORDER
+// =====================================================
 
-function placeOrder(event) {
+function placeOrder(e) {
 
-  event.preventDefault();
-
-
-  const name =
-    document.getElementById(
-      "name"
-    ).value;
+    e.preventDefault();
 
 
-  const phone =
-    document.getElementById(
-      "phone"
-    ).value;
+    const customerName =
+        document.getElementById("name").value;
+
+    const customerPhone =
+        document.getElementById("phone").value;
+
+    const customerAddress =
+        document.getElementById("address").value;
+
+    const paymentMethod =
+        document.getElementById("payment").value;
 
 
-  const address =
-    document.getElementById(
-      "address"
-    ).value;
+    const items =
+        cart
+            .map(p => p.name)
+            .join(", ");
 
 
-  const payment =
-    document.getElementById(
-      "payment"
-    ).value;
+    const total =
+        cart.reduce(
+            (sum, p) => sum + p.price,
+            0
+        );
 
 
-  const items =
-    cart.map(
-      p => p.name
-    ).join(", ");
+    const message =
+`🛍️ 3RD ZONE ORDER
+
+👤 Name: ${customerName}
+
+📞 Phone: ${customerPhone}
+
+📍 Address: ${customerAddress}
+
+💳 Payment: ${paymentMethod}
+
+📦 Products:
+${items}
+
+💰 Total: ৳${total.toLocaleString()}`;
 
 
-  const total =
-    cart.reduce(
-      (sum, p) =>
-        sum + p.price,
-      0
-    );
+    const url =
+        `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
 
-  const message =
-`3RD ZONE ORDER
-
-Name: ${name}
-
-Phone: ${phone}
-
-Address: ${address}
-
-Payment: ${payment}
-
-Items: ${items}
-
-Total: ৳${total}`;
+    window.open(url, "_blank");
 
 
-  const url =
-    `https://wa.me/${WHATSAPP_NUMBER}` +
-    `?text=${encodeURIComponent(message)}`;
+    cart = [];
 
+    updateCart();
 
-  window.open(
-    url,
-    "_blank"
-  );
-
-
-  cart = [];
-
-  updateCart();
-
-  closeCheckout();
-
+    closeCheckout();
 }
 
 
-// ======================================================
-// SORT
-// ======================================================
+// =====================================================
+// CATEGORY
+// =====================================================
 
-const sortElement =
-  document.getElementById(
-    "sort"
-  );
+function filterProducts(cat) {
 
+    if (cat === "all") {
 
-if (sortElement) {
+        render(products);
 
-  sortElement.addEventListener(
-    "change",
-    function () {
-
-      render();
-
+        return;
     }
-  );
 
+
+    render(
+        products.filter(
+            p =>
+                p.cat.toLowerCase() ===
+                cat.toLowerCase()
+        )
+    );
 }
 
 
-// ======================================================
+// =====================================================
+// SEARCH
+// =====================================================
+
+function searchProducts() {
+
+    const input =
+        document.getElementById("search");
+
+    const q =
+        input.value.toLowerCase();
+
+
+    render(
+        products.filter(p =>
+            (
+                p.name +
+                " " +
+                p.cat
+            )
+            .toLowerCase()
+            .includes(q)
+        )
+    );
+}
+
+
+// =====================================================
+// SECURITY / HTML ESCAPE
+// =====================================================
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// =====================================================
 // START
-// ======================================================
+// =====================================================
 
 loadProducts();
