@@ -6,7 +6,7 @@ const SUPABASE_URL = "https://oiuvprtyjajatubueoum.supabase.co";
 
 // এখানে তোমার Supabase-এর ANON/PUBLIC KEY বসাবে
 // SERVICE_ROLE KEY কখনো এখানে দেবে না।
-const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY_HERE";
+const SUPABASE_ANON_KEY = sb_publishable_i7FvSYVlb-gg73oLQyFMCg_fyfcg5pU
 
 let products = [];
 let cart = [];
