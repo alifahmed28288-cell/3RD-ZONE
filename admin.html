@@ -1,92 +1,1280 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3RD ZONE — Admin Panel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>3RD ZONE — Admin Dashboard</title>
+
   <link rel="stylesheet" href="admin.css">
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
-  <header>
-    <div>
-      <h1>3RD ZONE</h1>
-      <p>Admin Panel</p>
+
+<!-- =====================================================
+     LOGIN SCREEN
+===================================================== -->
+
+<div id="loginScreen" class="login-screen">
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="logo-box">3Z</div>
+
+      <div>
+        <h1>3RD ZONE</h1>
+        <p>Admin Dashboard</p>
+      </div>
     </div>
-    <button id="logoutBtn" class="secondary hidden">Logout</button>
-  </header>
 
-  <main>
-    <section id="configCard" class="card">
-      <h2>Connect Supabase</h2>
-      <p class="muted">Enter your Supabase Project URL and the browser-safe <b>anon/public key</b>. Never put a service-role key here.</p>
-      <label>Project URL<input id="supabaseUrl" placeholder="https://your-project.supabase.co"></label>
-      <label>Anon/Public Key<textarea id="supabaseKey" rows="3" placeholder="eyJ..."></textarea></label>
-      <button id="saveConfigBtn">Save & Continue</button>
-    </section>
+    <div class="login-title">
+      <h2>Welcome Back 👋</h2>
+      <p>Login to manage your store.</p>
+    </div>
 
-    <section id="loginCard" class="card hidden">
-      <h2>Admin Login</h2>
-      <label>Email<input id="email" type="email" autocomplete="email"></label>
-      <label>Password<input id="password" type="password" autocomplete="current-password"></label>
-      <button id="loginBtn">Login</button>
-      <p id="loginMsg" class="msg"></p>
-    </section>
+    <form id="loginForm">
 
-    <section id="dashboard" class="hidden">
-      <div class="grid">
-        <div class="card stat"><span>Total products</span><strong id="productCount">0</strong></div>
-        <div class="card stat"><span>Total views</span><strong id="viewCount">0</strong></div>
-        <div class="card stat"><span>Total orders</span><strong id="orderCount">0</strong></div>
+      <label>
+        Email
+        <input
+          id="loginEmail"
+          type="email"
+          value="alifahmed28288@gmail.com"
+          required
+        >
+      </label>
+
+      <label>
+        Password
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="Enter your password"
+          required
+        >
+      </label>
+
+      <button type="submit" class="login-btn">
+        Login to Dashboard
+      </button>
+
+      <p id="loginMessage" class="message"></p>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     ADMIN APP
+===================================================== -->
+
+<div id="adminApp" class="admin-app hidden">
+
+
+  <!-- SIDEBAR -->
+
+  <aside class="sidebar">
+
+    <div class="sidebar-logo">
+
+      <div class="logo-box">3Z</div>
+
+      <div>
+        <strong>3RD ZONE</strong>
+        <small>Admin Panel</small>
       </div>
 
-      <section class="card">
-        <h2>Add Product</h2>
-        <form id="productForm">
-          <div class="two">
-            <label>Product name<input id="pName" required></label>
-            <label>Category<input id="pCategory"></label>
-          </div>
-          <div class="two">
-            <label>Price<input id="pPrice" type="number" min="0" step="0.01" required></label>
-            <label>Old price<input id="pOldPrice" type="number" min="0" step="0.01"></label>
-          </div>
-          <div class="two">
-            <label>Stock<input id="pStock" type="number" min="0" value="0"></label>
-            <label>Featured
-              <select id="pFeatured"><option value="false">No</option><option value="true">Yes</option></select>
-            </label>
-          </div>
-          <label>Description<textarea id="pDescription" rows="4"></textarea></label>
-          <label>Product photos/videos
-            <input id="pMedia" type="file" accept="image/*,video/*" multiple>
-          </label>
-          <button type="submit">Add Product</button>
-          <p id="productMsg" class="msg"></p>
-        </form>
-      </section>
+    </div>
 
-      <section class="card">
-        <h2>Products</h2>
-        <div id="productsList" class="list"></div>
-      </section>
 
-      <section class="card">
-        <h2>Most Viewed Products</h2>
-        <div id="analyticsList" class="list"></div>
-      </section>
+    <nav class="sidebar-nav">
 
-      <section class="card">
-        <h2>Social Links</h2>
-        <form id="socialForm">
-          <div id="socialFields"></div>
-          <button type="submit">Save Social Links</button>
-          <p id="socialMsg" class="msg"></p>
-        </form>
-      </section>
+      <button class="nav-item active" data-section="dashboard">
+        <span>📊</span>
+        Dashboard
+      </button>
+
+      <button class="nav-item" data-section="products">
+        <span>📦</span>
+        Products
+      </button>
+
+      <button class="nav-item" data-section="orders">
+        <span>🛒</span>
+        Orders
+      </button>
+
+      <button class="nav-item" data-section="customers">
+        <span>👥</span>
+        Customers
+      </button>
+
+      <button class="nav-item" data-section="analytics">
+        <span>📈</span>
+        Analytics
+      </button>
+
+      <button class="nav-item" data-section="settings">
+        <span>⚙️</span>
+        Settings
+      </button>
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+      <a href="index.html" target="_blank" class="store-link">
+        🌐 View Store
+      </a>
+
+      <button id="logoutBtn" class="logout-btn">
+        🚪 Logout
+      </button>
+
+    </div>
+
+  </aside>
+
+
+  <!-- ===================================================
+       MAIN CONTENT
+  ==================================================== -->
+
+  <main class="main-content">
+
+
+    <!-- TOPBAR -->
+
+    <header class="admin-topbar">
+
+      <div class="mobile-menu">
+        ☰
+      </div>
+
+      <div class="page-heading">
+
+        <h1 id="pageTitle">
+          Dashboard
+        </h1>
+
+        <p id="pageSubtitle">
+          Welcome back to your store.
+        </p>
+
+      </div>
+
+
+      <div class="admin-profile">
+
+        <div class="notification">
+          🔔
+          <span id="notificationCount">0</span>
+        </div>
+
+        <div class="profile-avatar">
+          A
+        </div>
+
+        <div class="profile-info">
+          <strong>Admin</strong>
+          <small id="adminEmail">
+            alifahmed28288@gmail.com
+          </small>
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- =================================================
+         DASHBOARD
+    ================================================== -->
+
+    <section id="section-dashboard" class="admin-section active">
+
+      <div class="welcome-banner">
+
+        <div>
+
+          <span class="welcome-label">
+            3RD ZONE ADMIN
+          </span>
+
+          <h2>
+            Manage your store smarter 🚀
+          </h2>
+
+          <p>
+            Products, orders, customers and sales —
+            everything in one place.
+          </p>
+
+        </div>
+
+        <div class="welcome-icon">
+          🛍️
+        </div>
+
+      </div>
+
+
+      <!-- STAT CARDS -->
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+
+          <div class="stat-icon purple">
+            📦
+          </div>
+
+          <div>
+            <span>Total Products</span>
+            <strong id="statProducts">0</strong>
+          </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <div class="stat-icon orange">
+            🛒
+          </div>
+
+          <div>
+            <span>Total Orders</span>
+            <strong id="statOrders">0</strong>
+          </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <div class="stat-icon green">
+            💰
+          </div>
+
+          <div>
+            <span>Total Sales</span>
+            <strong id="statSales">৳0</strong>
+          </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <div class="stat-icon blue">
+            👁️
+          </div>
+
+          <div>
+            <span>Product Views</span>
+            <strong id="statViews">0</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- DASHBOARD GRID -->
+
+      <div class="dashboard-grid">
+
+
+        <!-- RECENT ORDERS -->
+
+        <div class="panel-card">
+
+          <div class="panel-header">
+
+            <div>
+              <h3>Recent Orders</h3>
+              <p>Latest customer orders</p>
+            </div>
+
+            <button
+              class="text-btn"
+              data-section-link="orders"
+            >
+              View All →
+            </button>
+
+          </div>
+
+          <div id="recentOrders">
+
+            <div class="empty-state">
+              <div>🛒</div>
+              <p>No orders yet</p>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- TOP PRODUCTS -->
+
+        <div class="panel-card">
+
+          <div class="panel-header">
+
+            <div>
+              <h3>Top Products</h3>
+              <p>Most viewed products</p>
+            </div>
+
+            <button
+              class="text-btn"
+              data-section-link="analytics"
+            >
+              Analytics →
+            </button>
+
+          </div>
+
+          <div id="topProducts">
+
+            <div class="empty-state">
+              <div>📊</div>
+              <p>No product data yet</p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- QUICK ACTIONS -->
+
+      <div class="panel-card">
+
+        <div class="panel-header">
+
+          <div>
+            <h3>Quick Actions</h3>
+            <p>Manage your store quickly</p>
+          </div>
+
+        </div>
+
+        <div class="quick-actions">
+
+          <button
+            class="quick-action"
+            data-section-link="products"
+          >
+            <span>➕</span>
+            <strong>Add Product</strong>
+            <small>Add a new product</small>
+          </button>
+
+          <button
+            class="quick-action"
+            data-section-link="orders"
+          >
+            <span>🛒</span>
+            <strong>Manage Orders</strong>
+            <small>View customer orders</small>
+          </button>
+
+          <button
+            class="quick-action"
+            data-section-link="analytics"
+          >
+            <span>📈</span>
+            <strong>View Analytics</strong>
+            <small>Check store performance</small>
+          </button>
+
+          <button
+            class="quick-action"
+            data-section-link="settings"
+          >
+            <span>⚙️</span>
+            <strong>Store Settings</strong>
+            <small>Update store information</small>
+          </button>
+
+        </div>
+
+      </div>
+
     </section>
+
+
+    <!-- =================================================
+         PRODUCTS
+    ================================================== -->
+
+    <section id="section-products" class="admin-section">
+
+
+      <div class="section-toolbar">
+
+        <div>
+          <h2>Products</h2>
+          <p>Manage your products, prices and media.</p>
+        </div>
+
+        <button id="openAddProductBtn" class="primary-btn">
+          ➕ Add Product
+        </button>
+
+      </div>
+
+
+      <div class="product-tools">
+
+        <div class="admin-search">
+
+          <span>🔍</span>
+
+          <input
+            id="productSearch"
+            placeholder="Search products..."
+          >
+
+        </div>
+
+
+        <select id="productCategoryFilter">
+
+          <option value="all">
+            All Categories
+          </option>
+
+        </select>
+
+
+        <select id="productStatusFilter">
+
+          <option value="all">
+            All Status
+          </option>
+
+          <option value="active">
+            Active
+          </option>
+
+          <option value="inactive">
+            Inactive
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="panel-card product-table-card">
+
+        <div class="table-responsive">
+
+          <table class="product-table">
+
+            <thead>
+
+              <tr>
+
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="productsTableBody">
+
+              <tr>
+
+                <td colspan="6">
+
+                  <div class="table-loading">
+                    Loading products...
+                  </div>
+
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================================
+         ORDERS
+    ================================================== -->
+
+    <section id="section-orders" class="admin-section">
+
+      <div class="section-toolbar">
+
+        <div>
+          <h2>Orders</h2>
+          <p>Manage customer orders.</p>
+        </div>
+
+        <select id="orderStatusFilter">
+
+          <option value="all">
+            All Orders
+          </option>
+
+          <option value="pending">
+            Pending
+          </option>
+
+          <option value="confirmed">
+            Confirmed
+          </option>
+
+          <option value="shipped">
+            Shipped
+          </option>
+
+          <option value="delivered">
+            Delivered
+          </option>
+
+          <option value="cancelled">
+            Cancelled
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="order-stats">
+
+        <div>
+          <span>Pending</span>
+          <strong id="pendingOrders">0</strong>
+        </div>
+
+        <div>
+          <span>Confirmed</span>
+          <strong id="confirmedOrders">0</strong>
+        </div>
+
+        <div>
+          <span>Shipped</span>
+          <strong id="shippedOrders">0</strong>
+        </div>
+
+        <div>
+          <span>Delivered</span>
+          <strong id="deliveredOrders">0</strong>
+        </div>
+
+      </div>
+
+
+      <div class="panel-card">
+
+        <div class="table-responsive">
+
+          <table class="order-table">
+
+            <thead>
+
+              <tr>
+
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="ordersTableBody">
+
+              <tr>
+
+                <td colspan="7">
+
+                  <div class="empty-state">
+                    <div>🛒</div>
+                    <p>No orders yet</p>
+                  </div>
+
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================================
+         CUSTOMERS
+    ================================================== -->
+
+    <section id="section-customers" class="admin-section">
+
+      <div class="section-toolbar">
+
+        <div>
+          <h2>Customers</h2>
+          <p>Customer information from your orders.</p>
+        </div>
+
+      </div>
+
+
+      <div class="panel-card">
+
+        <div class="table-responsive">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Orders</th>
+                <th>Total Spent</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="customersTableBody">
+
+              <tr>
+
+                <td colspan="5">
+
+                  <div class="empty-state">
+                    <div>👥</div>
+                    <p>No customers yet</p>
+                  </div>
+
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================================
+         ANALYTICS
+    ================================================== -->
+
+    <section id="section-analytics" class="admin-section">
+
+      <div class="section-toolbar">
+
+        <div>
+          <h2>Analytics</h2>
+          <p>Understand how your store is performing.</p>
+        </div>
+
+      </div>
+
+
+      <div class="analytics-grid">
+
+        <div class="panel-card">
+
+          <div class="panel-header">
+
+            <div>
+              <h3>Product Views</h3>
+              <p>Most viewed products</p>
+            </div>
+
+          </div>
+
+          <div id="analyticsProducts">
+
+            <div class="empty-state">
+              <div>📊</div>
+              <p>No analytics data yet</p>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="panel-card">
+
+          <div class="panel-header">
+
+            <div>
+              <h3>Store Overview</h3>
+              <p>Important statistics</p>
+            </div>
+
+          </div>
+
+          <div class="overview-list">
+
+            <div>
+              <span>Total Products</span>
+              <strong id="analyticsProductCount">0</strong>
+            </div>
+
+            <div>
+              <span>Total Orders</span>
+              <strong id="analyticsOrderCount">0</strong>
+            </div>
+
+            <div>
+              <span>Total Sales</span>
+              <strong id="analyticsSales">৳0</strong>
+            </div>
+
+            <div>
+              <span>Total Views</span>
+              <strong id="analyticsViews">0</strong>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================================
+         SETTINGS
+    ================================================== -->
+
+    <section id="section-settings" class="admin-section">
+
+      <div class="section-toolbar">
+
+        <div>
+          <h2>Store Settings</h2>
+          <p>Manage your website information.</p>
+        </div>
+
+      </div>
+
+
+      <div class="settings-grid">
+
+
+        <div class="panel-card">
+
+          <h3>Store Information</h3>
+
+          <p class="panel-description">
+            Basic information shown on your website.
+          </p>
+
+          <form id="storeSettingsForm">
+
+            <label>
+              Store Name
+
+              <input
+                id="settingStoreName"
+                value="3RD ZONE"
+              >
+
+            </label>
+
+
+            <label>
+              WhatsApp Number
+
+              <input
+                id="settingWhatsapp"
+                placeholder="8801XXXXXXXXX"
+              >
+
+            </label>
+
+
+            <label>
+              Delivery Information
+
+              <textarea
+                id="settingDelivery"
+                rows="3"
+              >Nationwide delivery available</textarea>
+
+            </label>
+
+
+            <button
+              type="submit"
+              class="primary-btn"
+            >
+              Save Settings
+            </button>
+
+            <p id="settingsMessage" class="message"></p>
+
+          </form>
+
+        </div>
+
+
+        <div class="panel-card">
+
+          <h3>Social Media</h3>
+
+          <p class="panel-description">
+            Add your social media links.
+          </p>
+
+          <form id="socialSettingsForm">
+
+            <label>
+              Facebook
+
+              <input
+                id="facebookUrl"
+                placeholder="https://facebook.com/..."
+              >
+
+            </label>
+
+
+            <label>
+              Instagram
+
+              <input
+                id="instagramUrl"
+                placeholder="https://instagram.com/..."
+              >
+
+            </label>
+
+
+            <label>
+              YouTube
+
+              <input
+                id="youtubeUrl"
+                placeholder="https://youtube.com/..."
+              >
+
+            </label>
+
+
+            <button
+              type="submit"
+              class="primary-btn"
+            >
+              Save Social Links
+            </button>
+
+            <p id="socialMessage" class="message"></p>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
   </main>
 
-  <script src="admin.js"></script>
+</div>
+
+
+<!-- =====================================================
+     ADD / EDIT PRODUCT MODAL
+===================================================== -->
+
+<div id="productModal" class="admin-modal">
+
+  <div class="modal-overlay"></div>
+
+  <div class="admin-modal-box">
+
+    <button
+      id="closeProductModal"
+      class="modal-close"
+    >
+      ×
+    </button>
+
+
+    <div class="modal-heading">
+
+      <h2 id="productModalTitle">
+        Add New Product
+      </h2>
+
+      <p>
+        Add product information, photos and videos.
+      </p>
+
+    </div>
+
+
+    <form id="productForm">
+
+
+      <input
+        id="editProductId"
+        type="hidden"
+      >
+
+
+      <div class="form-grid">
+
+
+        <label>
+          Product Name *
+
+          <input
+            id="productName"
+            required
+            placeholder="e.g. Wireless TWS Earbuds"
+          >
+
+        </label>
+
+
+        <label>
+          Category *
+
+          <input
+            id="productCategory"
+            required
+            placeholder="e.g. TWS"
+          >
+
+        </label>
+
+
+        <label>
+          Price *
+
+          <input
+            id="productPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            placeholder="999"
+          >
+
+        </label>
+
+
+        <label>
+          Old Price
+
+          <input
+            id="productOldPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="1499"
+          >
+
+        </label>
+
+
+        <label>
+          Stock
+
+          <input
+            id="productStock"
+            type="number"
+            min="0"
+            value="0"
+          >
+
+        </label>
+
+
+        <label>
+          Brand
+
+          <input
+            id="productBrand"
+            value="3RD ZONE"
+          >
+
+        </label>
+
+
+        <label>
+          Rating
+
+          <input
+            id="productRating"
+            type="number"
+            min="0"
+            max="5"
+            step="0.1"
+            value="5"
+          >
+
+        </label>
+
+
+        <label>
+          Reviews
+
+          <input
+            id="productReviews"
+            type="number"
+            min="0"
+            value="0"
+          >
+
+        </label>
+
+      </div>
+
+
+      <label>
+        Product Description
+
+        <textarea
+          id="productDescription"
+          rows="5"
+          placeholder="Write detailed product information..."
+        ></textarea>
+
+      </label>
+
+
+      <div class="media-upload-box">
+
+        <div class="media-upload-heading">
+
+          <div>
+            <h3>Product Photos & Videos</h3>
+
+            <p>
+              You can select multiple images and videos.
+            </p>
+          </div>
+
+          <span>📸 🎥</span>
+
+        </div>
+
+
+        <label class="file-upload">
+
+          <input
+            id="productMedia"
+            type="file"
+            accept="image/*,video/*"
+            multiple
+          >
+
+          <div class="upload-content">
+
+            <span>📁</span>
+
+            <strong>
+              Select Photos / Videos
+            </strong>
+
+            <small>
+              JPG, PNG, WEBP, MP4
+            </small>
+
+          </div>
+
+        </label>
+
+
+        <div id="mediaPreview" class="media-preview"></div>
+
+      </div>
+
+
+      <div class="product-options">
+
+        <label class="checkbox-label">
+
+          <input
+            id="productFeatured"
+            type="checkbox"
+          >
+
+          <span>
+            Featured Product
+          </span>
+
+        </label>
+
+
+        <label class="checkbox-label">
+
+          <input
+            id="productActive"
+            type="checkbox"
+            checked
+          >
+
+          <span>
+            Active Product
+          </span>
+
+        </label>
+
+      </div>
+
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          id="cancelProductBtn"
+          class="secondary-btn"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="primary-btn"
+        >
+          <span id="saveProductText">
+            Add Product
+          </span>
+        </button>
+
+      </div>
+
+
+      <p
+        id="productFormMessage"
+        class="message"
+      ></p>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     ORDER DETAILS MODAL
+===================================================== -->
+
+<div id="orderModal" class="admin-modal">
+
+  <div class="modal-overlay"></div>
+
+  <div class="admin-modal-box order-modal-box">
+
+    <button
+      id="closeOrderModal"
+      class="modal-close"
+    >
+      ×
+    </button>
+
+
+    <div class="modal-heading">
+
+      <h2>Order Details</h2>
+
+      <p>
+        View customer and order information.
+      </p>
+
+    </div>
+
+
+    <div id="orderDetailsContent">
+
+      <!-- JS will insert order details -->
+
+    </div>
+
+
+    <div class="modal-actions">
+
+      <button
+        id="whatsappOrderBtn"
+        class="whatsapp-btn"
+      >
+        💬 WhatsApp Customer
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div id="toast" class="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastMessage">Success</span>
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script src="admin.js"></script>
+
 </body>
 </html>
